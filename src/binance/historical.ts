@@ -90,8 +90,17 @@ export class HistoricalService {
       );
     }
 
+    const candle =
+      completed[index];
+
+    if (!candle) {
+      throw new Error(
+        `Not enough historical data for ${symbol}`
+      );
+    }
+
     const price =
-      completed[index].close;
+      candle.close;
 
     if (
       !Number.isFinite(price) ||

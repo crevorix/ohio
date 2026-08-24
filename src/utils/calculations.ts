@@ -102,12 +102,15 @@ function decimalPlaces(value: number): number {
   const string = String(value);
 
   if (string.includes("e-")) {
-    const [coefficient, exponent] =
+    const [coefficient = "", exponent = "0"] =
       string.split("e-");
+
+    const decimalPart =
+      coefficient.split(".")[1] ?? "";
 
     const coefficientDecimals =
       coefficient.includes(".")
-        ? coefficient.split(".")[1].length
+        ? decimalPart.length
         : 0;
 
     return (

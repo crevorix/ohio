@@ -8,9 +8,9 @@ import {
 } from "../utils/logger";
 
 export class BinanceWebSocket {
-  private ws?: WebSocket;
+  private ws: WebSocket | undefined;
 
-  private reconnectTimer?: NodeJS.Timeout;
+  private reconnectTimer: NodeJS.Timeout | undefined;
 
   private reconnectAttempts = 0;
 

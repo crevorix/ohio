@@ -1,5 +1,8 @@
 export interface SymbolRules {
   symbol: string;
+  status: string;
+  contractType: string;
+  priceTickSize: number;
   quantityStepSize: number;
   minQuantity: number;
   minNotional: number;
@@ -8,7 +11,7 @@ export interface SymbolRules {
 export interface Position {
   id?: number;
   symbol: string;
-  side: "LONG";
+  side: "LONG" | "SHORT";
   margin: number;
   notional: number;
   quantity: number;

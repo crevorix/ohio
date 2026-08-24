@@ -166,6 +166,15 @@ async function main() {
       client
     );
 
+  if (!dryRun) {
+
+    await futures.assertOneWayPositionMode();
+
+    log(
+      "Position mode: One-way"
+    );
+  }
+
   // ==========================================================
   // HISTORICAL
   // ==========================================================

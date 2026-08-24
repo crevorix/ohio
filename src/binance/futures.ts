@@ -211,6 +211,34 @@ export class FuturesService {
   }
 
   // ============================================================
+  // POSITION MODE
+  // ============================================================
+
+  async assertOneWayPositionMode(): Promise<void> {
+
+    const data =
+      await this.client.signedGet(
+        "/fapi/v1/positionSide/dual"
+      );
+
+    if (
+      !data ||
+      typeof data.dualSidePosition !== "boolean"
+    ) {
+      throw new Error(
+        "Invalid Binance position-mode response"
+      );
+    }
+
+    if (data.dualSidePosition) {
+      throw new Error(
+        "Binance Hedge Mode is not supported. " +
+        "Switch the Futures account to One-way Mode before running this bot."
+      );
+    }
+  }
+
+  // ============================================================
   // GET OPEN POSITION
   // ============================================================
 
@@ -715,16 +743,17 @@ export class FuturesService {
     ) {
 
       const [
-        coefficient,
-        exponent,
+        coefficient = "",
+        exponent = "0",
       ] =
         stringValue.split("e-");
 
+      const decimalPart =
+        coefficient.split(".")[1] ?? "";
+
       const coefficientDecimals =
         coefficient.includes(".")
-          ? coefficient
-              .split(".")[1]
-              .length
+          ? decimalPart.length
           : 0;
 
       return (

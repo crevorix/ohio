@@ -61,6 +61,28 @@ export class OrderManager {
   }
 
   // ==========================================================
+  // CLOSE MARKET
+  // ==========================================================
+
+  async closeMarket(
+    symbol: string,
+    positionSide: "LONG" | "SHORT",
+    quantity: number,
+    price: number
+  ) {
+
+    return this.marketOrder(
+      symbol,
+      positionSide === "LONG"
+        ? "SELL"
+        : "BUY",
+      quantity,
+      price,
+      true
+    );
+  }
+
+  // ==========================================================
   // MARKET ORDER
   // ==========================================================
 
@@ -68,7 +90,8 @@ export class OrderManager {
     symbol: string,
     side: "BUY" | "SELL",
     quantity: number,
-    price: number
+    price: number,
+    reduceOnly = false
   ) {
 
     // ========================================================
@@ -138,8 +161,9 @@ export class OrderManager {
     // ========================================================
 
     if (
+      !reduceOnly &&
       adjusted <
-      rule.minQuantity
+        rule.minQuantity
     ) {
 
       throw new Error(
@@ -171,6 +195,7 @@ export class OrderManager {
     // ========================================================
 
     if (
+      !reduceOnly &&
       rule.minNotional > 0 &&
       notional <
       rule.minNotional
@@ -228,6 +253,10 @@ export class OrderManager {
 
             quantity:
               quantityString,
+
+            ...(reduceOnly
+              ? { reduceOnly: "true" }
+              : {}),
 
             newOrderRespType:
               "RESULT",

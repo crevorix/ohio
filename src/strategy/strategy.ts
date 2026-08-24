@@ -9,6 +9,8 @@ import { PositionManager } from "../trading/positionManager";
 import { OrderManager } from "../trading/orderManager";
 import { FuturesService } from "../binance/futures";
 
+import { Position } from "../types";
+
 import {
   log,
   error,
@@ -42,7 +44,7 @@ const DRY_RUN =
 
 if (
   !Number.isFinite(LONG_DROP_PERCENT) ||
-  LONG_DROP_PERCENT < 0
+  LONG_DROP_PERCENT <= 0
 ) {
   throw new Error(
     "LONG_DROP_PERCENT is missing or invalid"
@@ -51,7 +53,7 @@ if (
 
 if (
   !Number.isFinite(SHORT_RISE_PERCENT) ||
-  SHORT_RISE_PERCENT < 0
+  SHORT_RISE_PERCENT <= 0
 ) {
   throw new Error(
     "SHORT_RISE_PERCENT is missing or invalid"
@@ -113,6 +115,20 @@ export class Strategy {
     new Set<string>();
 
   // ==========================================================
+  // SYMBOL PROCESSING LOCK
+  // ==========================================================
+
+  private readonly processing =
+    new Set<string>();
+
+  // ==========================================================
+  // RE-ENTRY LOCK
+  // ==========================================================
+
+  private readonly awaitingSignalReset =
+    new Set<string>();
+
+  // ==========================================================
   // CONSTRUCTOR
   // ==========================================================
 
@@ -171,6 +187,14 @@ export class Strategy {
     price: number
   ): Promise<void> {
 
+    if (
+      this.processing.has(symbol)
+    ) {
+      return;
+    }
+
+    this.processing.add(symbol);
+
     try {
 
       // ------------------------------------------------------
@@ -204,9 +228,16 @@ export class Strategy {
         // ----------------------------------------------------
 
         const binancePosition =
-          await this.futures.getOpenPosition(
-            symbol
-          );
+          DRY_RUN
+            ? {
+                positionAmt:
+                  localPosition.side === "LONG"
+                    ? localPosition.quantity
+                    : -localPosition.quantity,
+              }
+            : await this.futures.getOpenPosition(
+                symbol
+              );
 
         // ----------------------------------------------------
         // STALE LOCAL POSITION
@@ -250,9 +281,11 @@ export class Strategy {
             0
           );
 
-          // --------------------------------------------------
-          // Continue to signal detection.
-          // --------------------------------------------------
+          this.awaitingSignalReset.add(
+            symbol
+          );
+
+          return;
 
         } else {
 
@@ -353,6 +386,23 @@ export class Strategy {
         change >=
         SHORT_RISE_PERCENT;
 
+      if (
+        !longSignal &&
+        !shortSignal
+      ) {
+        this.awaitingSignalReset.delete(
+          symbol
+        );
+
+        return;
+      }
+
+      if (
+        this.awaitingSignalReset.has(symbol)
+      ) {
+        return;
+      }
+
       // ======================================================
       // LONG SIGNAL
       // ======================================================
@@ -404,6 +454,11 @@ export class Strategy {
           err?.message ??
           err
         }`
+      );
+    } finally {
+
+      this.processing.delete(
+        symbol
       );
     }
   }
@@ -923,7 +978,7 @@ export class Strategy {
   // ==========================================================
 
   private async closePosition(
-    position: any,
+    position: Position,
     price: number
   ): Promise<void> {
 
@@ -964,30 +1019,56 @@ export class Strategy {
 
       } else if (!DRY_RUN) {
 
-        // ====================================================
-        // LONG -> SELL TO CLOSE
-        // ====================================================
-
-        if (
-          position.side === "LONG"
-        ) {
-
-          await this.orders.sellMarket(
-            symbol,
-            position.quantity,
-            price
+        const positionAmount =
+          Number(
+            binancePosition.positionAmt
           );
 
+        if (
+          !Number.isFinite(positionAmount) ||
+          positionAmount === 0
+        ) {
+          throw new Error(
+            `Invalid Binance position size for ${symbol}`
+          );
+        }
+
+        const liveSide =
+          positionAmount > 0
+            ? "LONG"
+            : "SHORT";
+
+        if (
+          liveSide !== position.side
+        ) {
+          throw new Error(
+            `${symbol} local side ${position.side} does not match ` +
+            `Binance side ${liveSide}; refusing to close it`
+          );
+        }
+
+        const liveQuantity =
+          Math.abs(positionAmount);
+
         // ====================================================
-        // SHORT -> BUY TO CLOSE
+        // REDUCE-ONLY CLOSE USING LIVE POSITION SIZE
         // ====================================================
 
-        } else {
+        await this.orders.closeMarket(
+          symbol,
+          liveSide,
+          liveQuantity,
+          price
+        );
 
-          await this.orders.buyMarket(
-            symbol,
-            position.quantity,
-            price
+        const remainingPosition =
+          await this.futures.getOpenPosition(
+            symbol
+          );
+
+        if (remainingPosition) {
+          throw new Error(
+            `${symbol} still has an open Binance position after close order`
           );
         }
       }
@@ -1028,6 +1109,10 @@ export class Strategy {
         price,
         pnl,
         0
+      );
+
+      this.awaitingSignalReset.add(
+        symbol
       );
 
       // ======================================================
