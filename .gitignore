@@ -1,8 +1,53 @@
+# Dependencies
 node_modules/
+.npm/
+.pnpm-store/
+.yarn/
+
+# Build and test output
+dist/
+build/
+coverage/
+*.tsbuildinfo
+
+# Logs and runtime files
+logs/
+*.log
+*.log.*
+!*.log.example
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Local environment configuration
 .env
+.env.*
+!.env.example
+!.env.*.example
+
+# Local databases
 *.db
+*.db-*
 *.sqlite
 *.sqlite3
-logs/
-dist/
+
+# Credentials and private keys
 *.pem
+*.key
+
+# Tool caches and temporary files
+.cache/
+.tmp/
+tmp/
+temp/
+
+# Editor and operating-system files
+.idea/
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json
+*.swp
+*.swo
+.DS_Store
+Thumbs.db
