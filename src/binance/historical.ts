@@ -16,6 +16,10 @@ const LOOKBACK_DAYS = Number(
   process.env.LOOKBACK_DAYS
 );
 
+// Cache historical candles for 12 hours
+const CACHE_DURATION_MS =
+  12 * 60 * 60 * 1000;
+
 if (
   !Number.isFinite(LOOKBACK_DAYS) ||
   LOOKBACK_DAYS <= 0
@@ -26,6 +30,14 @@ if (
 }
 
 export class HistoricalService {
+  private readonly candleCache = new Map<
+    string,
+    {
+      candles: Candle[];
+      timestamp: number;
+    }
+  >();
+
   constructor(
     private readonly client: BinanceClient
   ) {}
@@ -34,6 +46,30 @@ export class HistoricalService {
     symbol: string,
     limit = LOOKBACK_DAYS + 2
   ): Promise<Candle[]> {
+
+    // ============================================================
+    // CHECK 12-HOUR CACHE
+    // ============================================================
+
+    const cached =
+      this.candleCache.get(symbol);
+
+    if (
+      cached &&
+      Date.now() - cached.timestamp <
+        CACHE_DURATION_MS
+    ) {
+      return cached.candles;
+    }
+
+    // ============================================================
+    // FETCH FROM BINANCE
+    // ============================================================
+
+    console.log(
+      `[HISTORY] Fetching ${symbol} ${LOOKBACK_DAYS}D candles`
+    );
+
     const data =
       await this.client.get(
         "/fapi/v1/klines",
@@ -50,26 +86,39 @@ export class HistoricalService {
       );
     }
 
-    return data
-      .map((c: any[]) => ({
-        openTime: Number(c[0]),
-        open: Number(c[1]),
-        high: Number(c[2]),
-        low: Number(c[3]),
-        close: Number(c[4]),
-        volume: Number(c[5]),
-        closeTime: Number(c[6]),
-      }))
-      .filter(
-        candle =>
-          Number.isFinite(candle.close) &&
-          candle.close > 0
-      );
+    const candles: Candle[] =
+      data
+        .map((c: any[]) => ({
+          openTime: Number(c[0]),
+          open: Number(c[1]),
+          high: Number(c[2]),
+          low: Number(c[3]),
+          close: Number(c[4]),
+          volume: Number(c[5]),
+          closeTime: Number(c[6]),
+        }))
+        .filter(
+          candle =>
+            Number.isFinite(candle.close) &&
+            candle.close > 0
+        );
+
+    // ============================================================
+    // SAVE TO 12-HOUR CACHE
+    // ============================================================
+
+    this.candleCache.set(symbol, {
+      candles,
+      timestamp: Date.now(),
+    });
+
+    return candles;
   }
 
   async getReferencePrice(
     symbol: string
   ): Promise<number> {
+
     const candles =
       await this.getDailyCandles(symbol);
 

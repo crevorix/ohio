@@ -1,0 +1,671 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ohio</title>
+
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background: #0b0f19;
+      color: #e5e7eb;
+    }
+
+    header {
+      padding: 20px 30px;
+      border-bottom: 1px solid #1f2937;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    header h1 {
+      margin: 0;
+      font-size: 24px;
+    }
+
+    .status {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      color: #22c55e;
+      font-size: 14px;
+    }
+
+    .dot {
+      width: 9px;
+      height: 9px;
+      background: #22c55e;
+      border-radius: 50%;
+    }
+
+    main {
+      padding: 25px 30px;
+      max-width: 1600px;
+      margin: auto;
+    }
+
+    .cards {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 15px;
+      margin-bottom: 25px;
+    }
+
+    .card {
+      background: #111827;
+      border: 1px solid #1f2937;
+      border-radius: 10px;
+      padding: 20px;
+    }
+
+    .card-title {
+      color: #9ca3af;
+      font-size: 13px;
+      margin-bottom: 10px;
+    }
+
+    .card-value {
+      font-size: 26px;
+      font-weight: bold;
+    }
+
+    .positive {
+      color: #22c55e;
+    }
+
+    .negative {
+      color: #ef4444;
+    }
+
+    .section {
+      background: #111827;
+      border: 1px solid #1f2937;
+      border-radius: 10px;
+      margin-bottom: 25px;
+      overflow: hidden;
+    }
+
+    .section-header {
+      padding: 18px 20px;
+      border-bottom: 1px solid #1f2937;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .section-header h2 {
+      margin: 0;
+      font-size: 17px;
+    }
+
+    .badge {
+      background: #1d4ed8;
+      padding: 4px 9px;
+      border-radius: 20px;
+      font-size: 12px;
+    }
+
+    .table-wrapper {
+      overflow-x: auto;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      min-width: 900px;
+    }
+
+    th {
+      text-align: left;
+      color: #9ca3af;
+      font-size: 12px;
+      font-weight: normal;
+      padding: 13px 20px;
+      background: #0f172a;
+    }
+
+    td {
+      padding: 14px 20px;
+      border-top: 1px solid #1f2937;
+      font-size: 13px;
+    }
+
+    tr:hover {
+      background: #151e2e;
+    }
+
+    .side-short {
+      color: #ef4444;
+      font-weight: bold;
+    }
+
+    .side-long {
+      color: #22c55e;
+      font-weight: bold;
+    }
+
+    .empty {
+      text-align: center;
+      padding: 35px;
+      color: #6b7280;
+    }
+
+    .refresh {
+      color: #9ca3af;
+      font-size: 12px;
+    }
+
+    @media (max-width: 1000px) {
+      .cards {
+        grid-template-columns: repeat(2, 1fr);
+      }
+    }
+
+    @media (max-width: 600px) {
+      main {
+        padding: 15px;
+      }
+
+      header {
+        padding: 15px;
+      }
+
+      .cards {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+
+<body>
+
+<header>
+  <h1>⚡ Ohio</h1>
+
+  <div class="status">
+    <span class="dot"></span>
+    <span id="botStatus">Checking...</span>
+  </div>
+</header>
+
+<main>
+
+  <!-- STATISTICS -->
+
+  <div class="cards">
+
+    <div class="card">
+      <div class="card-title">Open Positions</div>
+      <div class="card-value" id="openPositions">-</div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Closed Positions</div>
+      <div class="card-value" id="closedPositions">-</div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Total Trades</div>
+      <div class="card-value" id="totalTrades">-</div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Win Rate</div>
+      <div class="card-value" id="winRate">-</div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Gross P&L</div>
+      <div class="card-value" id="grossPnl">-</div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Trading Fees</div>
+      <div class="card-value" id="fees">-</div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Net P&L</div>
+      <div class="card-value" id="netPnl">-</div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Winning / Losing</div>
+      <div class="card-value">
+        <span class="positive" id="wins">-</span>
+        /
+        <span class="negative" id="losses">-</span>
+      </div>
+    </div>
+
+  </div>
+
+
+  <!-- OPEN POSITIONS -->
+
+  <div class="section">
+
+    <div class="section-header">
+      <h2>Open Positions</h2>
+      <span class="badge" id="openBadge">0</span>
+    </div>
+
+    <div class="table-wrapper">
+
+      <table>
+
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Symbol</th>
+            <th>Side</th>
+            <th>Margin</th>
+            <th>Notional</th>
+            <th>Quantity</th>
+            <th>Entry</th>
+            <th>Take Profit</th>
+            <th>Opened</th>
+          </tr>
+        </thead>
+
+        <tbody id="openTable">
+        </tbody>
+
+      </table>
+
+    </div>
+
+  </div>
+
+
+  <!-- CLOSED POSITIONS -->
+
+  <div class="section">
+
+    <div class="section-header">
+      <h2>Closed Positions</h2>
+
+      <span class="refresh">
+        Showing latest 100
+      </span>
+    </div>
+
+    <div class="table-wrapper">
+
+      <table>
+
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Symbol</th>
+            <th>Side</th>
+            <th>Margin</th>
+            <th>Notional</th>
+            <th>Entry</th>
+            <th>TP</th>
+            <th>Opened</th>
+            <th>Closed</th>
+          </tr>
+        </thead>
+
+        <tbody id="closedTable">
+        </tbody>
+
+      </table>
+
+    </div>
+
+  </div>
+
+
+  <!-- TRADES -->
+
+  <div class="section">
+
+    <div class="section-header">
+      <h2>Trade History</h2>
+
+      <span class="refresh">
+        Showing latest 100
+      </span>
+    </div>
+
+    <div class="table-wrapper">
+
+      <table>
+
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Symbol</th>
+            <th>Entry</th>
+            <th>Exit</th>
+            <th>Quantity</th>
+            <th>Margin</th>
+            <th>P&L</th>
+            <th>Fees</th>
+            <th>Entry Time</th>
+            <th>Exit Time</th>
+          </tr>
+        </thead>
+
+        <tbody id="tradesTable">
+        </tbody>
+
+      </table>
+
+    </div>
+
+  </div>
+
+</main>
+
+
+<script>
+
+function money(value) {
+  return Number(value || 0).toFixed(4);
+}
+
+function number(value) {
+  return Number(value || 0).toFixed(6);
+}
+
+function pnlClass(value) {
+  return Number(value) >= 0 ? "positive" : "negative";
+}
+
+function sideClass(side) {
+  return side === "LONG" ? "side-long" : "side-short";
+}
+
+function date(value) {
+  if (!value) return "-";
+
+  return new Date(value).toLocaleString();
+}
+
+
+// -------------------------
+// LOAD STATISTICS
+// -------------------------
+
+async function loadStats() {
+
+  try {
+
+    const response = await fetch("/api/stats");
+
+    const data = await response.json();
+
+    document.getElementById("openPositions").textContent =
+      data.positions.open;
+
+    document.getElementById("closedPositions").textContent =
+      data.positions.closed;
+
+    document.getElementById("totalTrades").textContent =
+      data.trades.total;
+
+    document.getElementById("winRate").textContent =
+      Number(data.trades.winRate).toFixed(2) + "%";
+
+    document.getElementById("grossPnl").textContent =
+      money(data.trades.pnl) + " USDT";
+
+    document.getElementById("fees").textContent =
+      money(data.trades.fees) + " USDT";
+
+    const net = document.getElementById("netPnl");
+
+    net.textContent =
+      money(data.trades.netPnl) + " USDT";
+
+    net.className =
+      "card-value " + pnlClass(data.trades.netPnl);
+
+    document.getElementById("wins").textContent =
+      data.trades.wins;
+
+    document.getElementById("losses").textContent =
+      data.trades.losses;
+
+    document.getElementById("openBadge").textContent =
+      data.positions.open;
+
+  } catch (error) {
+
+    console.error(error);
+
+  }
+
+}
+
+
+// -------------------------
+// OPEN POSITIONS
+// -------------------------
+
+async function loadOpenPositions() {
+
+  const response =
+    await fetch("/api/positions/open");
+
+  const positions =
+    await response.json();
+
+  const table =
+    document.getElementById("openTable");
+
+  if (!positions.length) {
+
+    table.innerHTML = `
+      <tr>
+        <td colspan="9" class="empty">
+          No open positions
+        </td>
+      </tr>
+    `;
+
+    return;
+  }
+
+  table.innerHTML = positions.map(p => `
+
+    <tr>
+
+      <td>${p.id}</td>
+
+      <td><strong>${p.symbol}</strong></td>
+
+      <td class="${sideClass(p.side)}">
+        ${p.side}
+      </td>
+
+      <td>${money(p.margin)}</td>
+
+      <td>${money(p.notional)}</td>
+
+      <td>${number(p.quantity)}</td>
+
+      <td>${number(p.entry_price)}</td>
+
+      <td>${number(p.take_profit_price)}</td>
+
+      <td>${date(p.created_at)}</td>
+
+    </tr>
+
+  `).join("");
+
+}
+
+
+// -------------------------
+// CLOSED POSITIONS
+// -------------------------
+
+async function loadClosedPositions() {
+
+  const response =
+    await fetch("/api/positions/closed");
+
+  let positions =
+    await response.json();
+
+  positions =
+    positions.slice(0, 100);
+
+  const table =
+    document.getElementById("closedTable");
+
+  table.innerHTML = positions.map(p => `
+
+    <tr>
+
+      <td>${p.id}</td>
+
+      <td><strong>${p.symbol}</strong></td>
+
+      <td class="${sideClass(p.side)}">
+        ${p.side}
+      </td>
+
+      <td>${money(p.margin)}</td>
+
+      <td>${money(p.notional)}</td>
+
+      <td>${number(p.entry_price)}</td>
+
+      <td>${number(p.take_profit_price)}</td>
+
+      <td>${date(p.created_at)}</td>
+
+      <td>${date(p.closed_at)}</td>
+
+    </tr>
+
+  `).join("");
+
+}
+
+
+// -------------------------
+// TRADES
+// -------------------------
+
+async function loadTrades() {
+
+  const response =
+    await fetch("/api/trades");
+
+  let trades =
+    await response.json();
+
+  trades =
+    trades.slice(0, 100);
+
+  const table =
+    document.getElementById("tradesTable");
+
+  table.innerHTML = trades.map(t => `
+
+    <tr>
+
+      <td>${t.id}</td>
+
+      <td><strong>${t.symbol}</strong></td>
+
+      <td>${number(t.entry_price)}</td>
+
+      <td>${number(t.exit_price)}</td>
+
+      <td>${number(t.quantity)}</td>
+
+      <td>${money(t.margin)}</td>
+
+      <td class="${pnlClass(t.pnl)}">
+        ${money(t.pnl)}
+      </td>
+
+      <td>${money(t.fees)}</td>
+
+      <td>${date(t.entry_time)}</td>
+
+      <td>${date(t.exit_time)}</td>
+
+    </tr>
+
+  `).join("");
+
+}
+
+
+// -------------------------
+// BOT HEALTH
+// -------------------------
+
+async function loadHealth() {
+
+  try {
+
+    const response =
+      await fetch("/api/health");
+
+    if (response.ok) {
+
+      document.getElementById("botStatus")
+        .textContent = "Dashboard Online";
+
+    }
+
+  } catch {
+
+    document.getElementById("botStatus")
+      .textContent = "Offline";
+
+  }
+
+}
+
+
+// -------------------------
+// LOAD EVERYTHING
+// -------------------------
+
+async function refresh() {
+
+  await Promise.all([
+
+    loadStats(),
+
+    loadOpenPositions(),
+
+    loadClosedPositions(),
+
+    loadTrades(),
+
+    loadHealth()
+
+  ]);
+
+}
+
+refresh();
+
+
+// Refresh every 5 seconds
+
+setInterval(refresh, 5000);
+
+</script>
+
+</body>
+</html>
